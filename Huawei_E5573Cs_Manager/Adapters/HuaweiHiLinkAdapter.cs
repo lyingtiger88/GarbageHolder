@@ -196,6 +196,35 @@ public sealed class HuaweiHiLinkAdapter : IRouterAdapter, IDisposable
             Sinr: Value(signal, "sinr", "SINR"));
     }
 
+    public async Task<TrafficStatistics> GetTrafficStatisticsAsync(CancellationToken cancellationToken = default)
+    {
+        await EnsureSessionAsync(cancellationToken);
+        var xml = await GetXmlAsync("api/monitoring/traffic-statistics", cancellationToken);
+
+        return new TrafficStatistics(
+            CurrentConnectTimeSeconds: ParseLong(Value(xml, "CurrentConnectTime")),
+            CurrentUploadBytes: ParseLong(Value(xml, "CurrentUpload")),
+            CurrentDownloadBytes: ParseLong(Value(xml, "CurrentDownload")),
+            CurrentUploadRateBytesPerSecond: ParseLong(Value(xml, "CurrentUploadRate")),
+            CurrentDownloadRateBytesPerSecond: ParseLong(Value(xml, "CurrentDownloadRate")),
+            TotalUploadBytes: ParseLong(Value(xml, "TotalUpload")),
+            TotalDownloadBytes: ParseLong(Value(xml, "TotalDownload")),
+            TotalConnectTimeSeconds: ParseLong(Value(xml, "TotalConnectTime")));
+    }
+
+    public async Task<MonthTrafficStatistics> GetMonthTrafficStatisticsAsync(CancellationToken cancellationToken = default)
+    {
+        await EnsureSessionAsync(cancellationToken);
+        var xml = await GetXmlAsync("api/monitoring/month_statistics", cancellationToken, throwOnApiError: false);
+        if (xml.Name.LocalName.Equals("error", StringComparison.OrdinalIgnoreCase))
+            return new MonthTrafficStatistics(null, null, null);
+
+        return new MonthTrafficStatistics(
+            UploadBytes: ParseLong(Value(xml, "CurrentMonthUpload", "MonthUpload")),
+            DownloadBytes: ParseLong(Value(xml, "CurrentMonthDownload", "MonthDownload")),
+            DurationSeconds: ParseLong(Value(xml, "MonthDuration", "CurrentMonthDuration")));
+    }
+
     /// <summary>
     /// Reads Wi-Fi configuration directly from the modem. This is more reliable than parsing
     /// localized netsh output and also works when the PC is connected to the modem via USB.
@@ -246,11 +275,63 @@ public sealed class HuaweiHiLinkAdapter : IRouterAdapter, IDisposable
             }
         }
 
-        return result
+        var clients = result
             .Where(x => x.IpAddress != "-" || x.MacAddress != "-")
             .GroupBy(x => x.MacAddress != "-" ? x.MacAddress : x.IpAddress, StringComparer.OrdinalIgnoreCase)
             .Select(g => g.First())
             .ToList();
+
+        // Some later HiLink builds expose extra per-host traffic counters through a
+        // LAN-host detail endpoint. E5573Cs firmware commonly does not; in that case
+        // we keep the counters null instead of inventing an estimate.
+        try
+        {
+            clients = await EnrichClientTrafficAsync(clients, cancellationToken);
+        }
+        catch
+        {
+            // Optional firmware-specific endpoint.
+        }
+
+        return clients;
+    }
+
+    private async Task<List<ConnectedDevice>> EnrichClientTrafficAsync(
+        List<ConnectedDevice> clients,
+        CancellationToken cancellationToken)
+    {
+        var xml = await GetXmlAsync("api/monitoring/lan-host-detail", cancellationToken, throwOnApiError: false);
+        if (xml.Name.LocalName.Equals("error", StringComparison.OrdinalIgnoreCase))
+            return clients;
+
+        var enriched = new List<ConnectedDevice>(clients.Count);
+        foreach (var client in clients)
+        {
+            var match = xml.DescendantsAndSelf().FirstOrDefault(node =>
+            {
+                var mac = Value(node, "MacAddress", "MACAddress", "macaddress", "Mac", "MAC");
+                return !string.IsNullOrWhiteSpace(mac) && MacEquals(mac, client.MacAddress);
+            });
+
+            if (match is null)
+            {
+                enriched.Add(client);
+                continue;
+            }
+
+            var upload = ParseLong(Value(match,
+                "UploadBytes", "UpBytes", "CurrentUpload", "TotalUpload", "Upload"));
+            var download = ParseLong(Value(match,
+                "DownloadBytes", "DownBytes", "CurrentDownload", "TotalDownload", "Download"));
+
+            enriched.Add(client with
+            {
+                UploadBytes = upload ?? client.UploadBytes,
+                DownloadBytes = download ?? client.DownloadBytes
+            });
+        }
+
+        return enriched;
     }
 
 
@@ -707,7 +788,9 @@ public sealed class HuaweiHiLinkAdapter : IRouterAdapter, IDisposable
                 HostName: Value(node, "HostName", "hostname", "Name", "DeviceName") ?? "Unknown device",
                 IpAddress: ip ?? "-",
                 MacAddress: mac ?? "-",
-                AssociatedTime: Value(node, "AssociatedTime", "associatedtime", "ConnectTime")));
+                AssociatedTimeSeconds: ParseLong(Value(node, "AssociatedTime", "associatedtime", "ConnectTime")),
+                UploadBytes: ParseLong(Value(node, "UploadBytes", "UpBytes", "CurrentUpload", "TotalUpload", "Upload")),
+                DownloadBytes: ParseLong(Value(node, "DownloadBytes", "DownBytes", "CurrentDownload", "TotalDownload", "Download"))));
         }
     }
 
@@ -769,6 +852,7 @@ public sealed class HuaweiHiLinkAdapter : IRouterAdapter, IDisposable
     }
 
     private static int? ParseInt(string? value) => int.TryParse(value, out var result) ? result : null;
+    private static long? ParseLong(string? value) => long.TryParse(value, out var result) ? result : null;
 
     private static bool? ParseBool01(string? value) => value switch
     {
