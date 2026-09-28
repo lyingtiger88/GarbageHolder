@@ -1,3 +1,12 @@
+## v6
+
+- Added Traffic tab with current-session upload/download, live rates, connection time, lifetime modem counters and current-month traffic.
+- Added local quarterly traffic history.
+- Converted Wi-Fi client connection duration from raw seconds to HH:MM:SS.
+- Added per-client Upload, Download and Total usage columns.
+- Per-client counters are populated only from real firmware fields / optional LAN-host detail data; unsupported E5573Cs firmware shows N/A rather than fabricated estimates.
+- Added human-readable byte formatting.
+
 # Changelog
 
 ## v5
