@@ -141,9 +141,12 @@
                                   SelectionMode="Single" SelectionUnit="FullRow">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="Name" Binding="{Binding HostName}" Width="*"/>
-                                <DataGridTextColumn Header="IP" Binding="{Binding IpAddress}" Width="150"/>
-                                <DataGridTextColumn Header="MAC" Binding="{Binding MacAddress}" Width="165"/>
-                                <DataGridTextColumn Header="Connected time" Binding="{Binding AssociatedTime}" Width="130"/>
+                                <DataGridTextColumn Header="IP" Binding="{Binding IpAddress}" Width="135"/>
+                                <DataGridTextColumn Header="MAC" Binding="{Binding MacAddress}" Width="155"/>
+                                <DataGridTextColumn Header="Connected time" Binding="{Binding ConnectedTimeDisplay}" Width="115"/>
+                                <DataGridTextColumn Header="Upload" Binding="{Binding UploadDisplay}" Width="105"/>
+                                <DataGridTextColumn Header="Download" Binding="{Binding DownloadDisplay}" Width="105"/>
+                                <DataGridTextColumn Header="Total usage" Binding="{Binding TotalUsageDisplay}" Width="110"/>
                             </DataGrid.Columns>
                         </DataGrid>
 
@@ -161,6 +164,124 @@
                                 <DataGridTextColumn Header="Name" Binding="{Binding HostName}" Width="*"/>
                                 <DataGridTextColumn Header="MAC" Binding="{Binding MacAddress}" Width="210"/>
                                 <DataGridTextColumn Header="SSID index" Binding="{Binding SsidIndex}" Width="100"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </TabItem>
+
+                <TabItem Header="Traffic">
+                    <Grid Margin="10">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="10"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="10"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="10"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <DockPanel Grid.Row="0">
+                            <Button Content="Refresh traffic" Click="RefreshTraffic_Click" DockPanel.Dock="Left"/>
+                            <TextBlock Text="Quarter history is tracked locally by this app from the first observation; it is not retroactive."
+                                       Margin="14,0,0,0" VerticalAlignment="Center" Opacity="0.68" TextWrapping="Wrap"/>
+                        </DockPanel>
+
+                        <Grid Grid.Row="2">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="10"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="10"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <GroupBox Header="Current session" Grid.Column="0" Padding="10">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Text="Time" Grid.Row="0"/>
+                                    <TextBlock x:Name="SessionTimeText" Text="-" Grid.Row="0" Grid.Column="1" HorizontalAlignment="Right" FontWeight="SemiBold"/>
+                                    <TextBlock Text="Upload" Grid.Row="1"/>
+                                    <TextBlock x:Name="SessionUploadText" Text="-" Grid.Row="1" Grid.Column="1" HorizontalAlignment="Right"/>
+                                    <TextBlock Text="Download" Grid.Row="2"/>
+                                    <TextBlock x:Name="SessionDownloadText" Text="-" Grid.Row="2" Grid.Column="1" HorizontalAlignment="Right"/>
+                                    <TextBlock Text="Total" Grid.Row="3"/>
+                                    <TextBlock x:Name="SessionTotalText" Text="-" Grid.Row="3" Grid.Column="1" HorizontalAlignment="Right" FontWeight="SemiBold"/>
+                                    <TextBlock Text="Upload rate" Grid.Row="4"/>
+                                    <TextBlock x:Name="UploadRateText" Text="-" Grid.Row="4" Grid.Column="1" HorizontalAlignment="Right"/>
+                                    <TextBlock Text="Download rate" Grid.Row="5"/>
+                                    <TextBlock x:Name="DownloadRateText" Text="-" Grid.Row="5" Grid.Column="1" HorizontalAlignment="Right"/>
+                                </Grid>
+                            </GroupBox>
+
+                            <GroupBox Header="Current month" Grid.Column="2" Padding="10">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Text="Duration" Grid.Row="0"/>
+                                    <TextBlock x:Name="MonthTimeText" Text="-" Grid.Row="0" Grid.Column="1" HorizontalAlignment="Right" FontWeight="SemiBold"/>
+                                    <TextBlock Text="Upload" Grid.Row="1"/>
+                                    <TextBlock x:Name="MonthUploadText" Text="-" Grid.Row="1" Grid.Column="1" HorizontalAlignment="Right"/>
+                                    <TextBlock Text="Download" Grid.Row="2"/>
+                                    <TextBlock x:Name="MonthDownloadText" Text="-" Grid.Row="2" Grid.Column="1" HorizontalAlignment="Right"/>
+                                    <TextBlock Text="Total" Grid.Row="3"/>
+                                    <TextBlock x:Name="MonthTotalText" Text="-" Grid.Row="3" Grid.Column="1" HorizontalAlignment="Right" FontWeight="SemiBold"/>
+                                </Grid>
+                            </GroupBox>
+
+                            <GroupBox Header="Lifetime modem counters" Grid.Column="4" Padding="10">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Text="Time" Grid.Row="0"/>
+                                    <TextBlock x:Name="TotalTimeText" Text="-" Grid.Row="0" Grid.Column="1" HorizontalAlignment="Right" FontWeight="SemiBold"/>
+                                    <TextBlock Text="Upload" Grid.Row="1"/>
+                                    <TextBlock x:Name="TotalUploadText" Text="-" Grid.Row="1" Grid.Column="1" HorizontalAlignment="Right"/>
+                                    <TextBlock Text="Download" Grid.Row="2"/>
+                                    <TextBlock x:Name="TotalDownloadText" Text="-" Grid.Row="2" Grid.Column="1" HorizontalAlignment="Right"/>
+                                    <TextBlock Text="Total" Grid.Row="3"/>
+                                    <TextBlock x:Name="GrandTotalText" Text="-" Grid.Row="3" Grid.Column="1" HorizontalAlignment="Right" FontWeight="SemiBold"/>
+                                </Grid>
+                            </GroupBox>
+                        </Grid>
+
+                        <TextBlock Grid.Row="4" Text="Quarterly modem-wide traffic (local tracking)"
+                                   FontSize="17" FontWeight="SemiBold"/>
+
+                        <DataGrid Grid.Row="6" x:Name="QuarterTrafficGrid" AutoGenerateColumns="False" IsReadOnly="True"
+                                  SelectionMode="Single" SelectionUnit="FullRow">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Quarter" Binding="{Binding Quarter}" Width="*"/>
+                                <DataGridTextColumn Header="Upload" Binding="{Binding UploadDisplay}" Width="160"/>
+                                <DataGridTextColumn Header="Download" Binding="{Binding DownloadDisplay}" Width="160"/>
+                                <DataGridTextColumn Header="Total" Binding="{Binding TotalDisplay}" Width="160"/>
                             </DataGrid.Columns>
                         </DataGrid>
                     </Grid>
