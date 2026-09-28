@@ -16,6 +16,10 @@ Native Windows WPF manager for Huawei E5573/E5573Cs HiLink modems.
 - Mobile data ON/OFF
 - Reboot modem
 - Activity log
+- Traffic dashboard: current session upload/download/rates/time, current month, lifetime counters
+- Local quarterly traffic history (starts tracking from the first observation)
+- Wi-Fi connection time displayed as HH:MM:SS
+- Per-client upload/download columns when the modem firmware exposes real byte counters
 
 ## v5 SMS fix
 
@@ -45,3 +49,12 @@ Output:
 ## Safety
 
 MAC blacklist changes can disconnect devices immediately. The app refuses to block/disconnect a client whose IP matches the Windows PC currently running the manager, because doing so could cut off access before a temporary block can be reverted.
+
+
+## Per-device traffic limitation
+
+The standard E5573/E5573Cs `api/wlan/host-list` response normally contains only ID, MAC, IP, host name and `AssociatedTime`; it does not provide per-client byte counters. The manager now probes known optional traffic fields and `api/monitoring/lan-host-detail`. If the firmware exposes real per-client counters, they are shown. Otherwise Upload/Download/Total usage stay `N/A` rather than showing an estimate.
+
+Accurate modem-wide counters come from `api/monitoring/traffic-statistics` and monthly counters from `api/monitoring/month_statistics`.
+
+Quarter history is stored locally under the user's LocalAppData profile and starts from the first observation. If the app is not observed across a quarter boundary, it deliberately does not guess how an unseen cross-quarter delta should be split.
