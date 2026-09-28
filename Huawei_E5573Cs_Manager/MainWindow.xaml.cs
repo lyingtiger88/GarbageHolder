@@ -12,8 +12,10 @@ namespace ModemManagerNative;
 public partial class MainWindow : Window
 {
     private readonly NetworkDiscoveryService _network = new();
+    private readonly TrafficHistoryService _trafficHistory = new();
     private string? _gateway;
     private HuaweiHiLinkAdapter? _huawei;
+    private bool _perClientTrafficNoticeLogged;
 
     public MainWindow()
     {
@@ -77,6 +79,8 @@ public partial class MainWindow : Window
             {
                 if (!silent) Log("Huawei HiLink API detected successfully.");
                 await RefreshHuaweiStatusAsync();
+                try { await RefreshTrafficAsync(silent: true); }
+                catch (Exception ex) { if (!silent) Log("Traffic refresh unavailable: " + ex.Message); }
                 return true;
             }
 
@@ -224,6 +228,12 @@ public partial class MainWindow : Window
         var devices = await _huawei.GetConnectedDevicesAsync();
         ClientsGrid.ItemsSource = devices;
         Log($"Wi-Fi client list refreshed: {devices.Count} client(s) returned by the modem API.");
+
+        if (devices.Count > 0 && !devices.Any(x => x.HasTrafficCounters) && !_perClientTrafficNoticeLogged)
+        {
+            _perClientTrafficNoticeLogged = true;
+            Log("This E5573Cs firmware does not expose per-client upload/download byte counters in host-list/LAN-host detail. The app leaves per-device traffic as N/A instead of estimating it. Connection time is still exact.");
+        }
     }
 
     private async Task RefreshBlacklistAsync(bool requireLogin = true)
@@ -242,6 +252,38 @@ public partial class MainWindow : Window
         return !string.IsNullOrWhiteSpace(localIp) &&
                !string.IsNullOrWhiteSpace(device.IpAddress) &&
                localIp.Equals(device.IpAddress.Trim(), StringComparison.OrdinalIgnoreCase);
+    }
+
+    private async Task RefreshTrafficAsync(bool silent = false)
+    {
+        await EnsureHuaweiAsync();
+
+        var traffic = await _huawei!.GetTrafficStatisticsAsync();
+        var month = await _huawei.GetMonthTrafficStatisticsAsync();
+
+        SessionTimeText.Text = TrafficFormat.Duration(traffic.CurrentConnectTimeSeconds);
+        SessionUploadText.Text = TrafficFormat.Bytes(traffic.CurrentUploadBytes);
+        SessionDownloadText.Text = TrafficFormat.Bytes(traffic.CurrentDownloadBytes);
+        SessionTotalText.Text = TrafficFormat.Bytes(traffic.CurrentTotalBytes);
+        UploadRateText.Text = TrafficFormat.Rate(traffic.CurrentUploadRateBytesPerSecond);
+        DownloadRateText.Text = TrafficFormat.Rate(traffic.CurrentDownloadRateBytesPerSecond);
+
+        MonthTimeText.Text = TrafficFormat.Duration(month.DurationSeconds);
+        MonthUploadText.Text = TrafficFormat.Bytes(month.UploadBytes);
+        MonthDownloadText.Text = TrafficFormat.Bytes(month.DownloadBytes);
+        MonthTotalText.Text = TrafficFormat.Bytes(month.TotalBytes);
+
+        TotalTimeText.Text = TrafficFormat.Duration(traffic.TotalConnectTimeSeconds);
+        TotalUploadText.Text = TrafficFormat.Bytes(traffic.TotalUploadBytes);
+        TotalDownloadText.Text = TrafficFormat.Bytes(traffic.TotalDownloadBytes);
+        GrandTotalText.Text = TrafficFormat.Bytes(traffic.TotalBytes);
+
+        QuarterTrafficGrid.ItemsSource = _trafficHistory.Update(traffic);
+
+        if (!silent)
+        {
+            Log($"Traffic refreshed. Session: up {TrafficFormat.Bytes(traffic.CurrentUploadBytes)}, down {TrafficFormat.Bytes(traffic.CurrentDownloadBytes)}, time {TrafficFormat.Duration(traffic.CurrentConnectTimeSeconds)}.");
+        }
     }
 
     private async Task RefreshSmsAsync()
@@ -495,6 +537,19 @@ public partial class MainWindow : Window
             Log("Reboot command accepted by the modem.");
         }
         catch (Exception ex) { Log("Could not reboot modem: " + ex.Message); }
+    }
+
+    private async void RefreshTraffic_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            await RefreshTrafficAsync();
+        }
+        catch (Exception ex)
+        {
+            Log("Could not refresh traffic statistics: " + ex.Message);
+            MessageBox.Show(ex.Message, "Traffic statistics", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 
     private async void RefreshSms_Click(object sender, RoutedEventArgs e)
