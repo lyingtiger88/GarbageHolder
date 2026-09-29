@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#1c1e22">
+  <title>ورود به اینترنت</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  $(if chap-id)
+  <form name="sendin" action="$(link-login-only)" method="post" class="hidden">
+    <input type="hidden" name="username">
+    <input type="hidden" name="password">
+    <input type="hidden" name="dst" value="$(link-orig)">
+    <input type="hidden" name="popup" value="true">
+  </form>
+  <script src="/md5.js"></script>
+  <script>
+    function doLogin() {
+      document.sendin.username.value = document.login.username.value;
+      document.sendin.password.value = hexMD5('$(chap-id)' + document.login.password.value + '$(chap-challenge)');
+      document.sendin.submit();
+      return false;
+    }
+  </script>
+  $(endif)
+
+  <main class="shell login-shell">
+    <section class="topbar">
+      <div class="brand-mark"><span class="dot"></span> Hotspot</div>
+      <div class="net-state">● ONLINE</div>
+    </section>
+
+    <section class="hero-card">
+      <div class="chip-icon">◎</div>
+      <div>
+        <div class="eyebrow">MIKROTIK ACCESS</div>
+        <h1>ورود به شبکه</h1>
+        <p>برای اتصال، نام کاربری و رمز عبور خود را وارد کنید.</p>
+      </div>
+    </section>
+
+    <section class="metric-strip">
+      <article class="metric">
+        <span>وضعیت</span>
+        <strong>Ready</strong>
+        <div class="mini-bar"><i style="width:88%"></i></div>
+      </article>
+      <article class="metric">
+        <span>شبکه</span>
+        <strong>Hotspot</strong>
+        <div class="mini-bar"><i style="width:72%"></i></div>
+      </article>
+      <article class="metric">
+        <span>امنیت</span>
+        <strong>Protected</strong>
+        <div class="mini-bar"><i style="width:94%"></i></div>
+      </article>
+      <article class="metric">
+        <span>Gateway</span>
+        <strong>Active</strong>
+        <div class="mini-bar"><i style="width:81%"></i></div>
+      </article>
+    </section>
+
+    <section class="panel">
+      <div class="section-head">
+        <div><span class="section-mark"></span> Login</div>
+        <b>ACCESS</b>
+      </div>
+
+      <form name="login" action="$(link-login-only)" method="post"
+            $(if chap-id) onsubmit="return doLogin()" $(endif) class="login-form">
+        <input type="hidden" name="dst" value="$(link-orig)">
+        <input type="hidden" name="popup" value="true">
+
+        <label>
+          <span>نام کاربری</span>
+          <input name="username" type="text" value="$(username)" autocomplete="username" placeholder="Username">
+        </label>
+
+        <label>
+          <span>رمز عبور</span>
+          <input name="password" type="password" autocomplete="current-password" placeholder="Password">
+        </label>
+
+        $(if error)
+        <div class="error">$(error)</div>
+        $(endif)
+
+        <button type="submit">اتصال به اینترنت</button>
+      </form>
+    </section>
+
+    <section class="preview-chart panel">
+      <div class="section-head">
+        <div><span class="section-mark"></span> Traffic Preview</div>
+        <b>LIVE UI</b>
+      </div>
+      <div class="chart-shell chart-demo" aria-hidden="true">
+        <div class="dots"></div>
+        <svg viewBox="0 0 640 190" preserveAspectRatio="none">
+          <path class="area" d="M0 155 L45 145 L90 151 L135 130 L180 138 L225 95 L270 119 L315 84 L360 100 L405 58 L450 79 L495 46 L540 82 L585 64 L640 31 L640 190 L0 190 Z"></path>
+          <polyline class="line" points="0,155 45,145 90,151 135,130 180,138 225,95 270,119 315,84 360,100 405,58 450,79 495,46 540,82 585,64 640,31"></polyline>
+        </svg>
+      </div>
+      <div class="hint">پس از ورود، نمودار مصرف واقعی هر ثانیه به‌روزرسانی می‌شود.</div>
+    </section>
+  </main>
+</body>
+</html>
