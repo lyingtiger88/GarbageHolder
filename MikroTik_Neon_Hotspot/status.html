@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#1c1e22">
+  <title>وضعیت اینترنت</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <main class="shell">
+    <section class="topbar">
+      <div class="brand-mark"><span class="dot"></span> Hotspot</div>
+      <div class="net-state">● CONNECTED</div>
+    </section>
+
+    <section class="hero-card status-hero">
+      <div class="chip-icon">◎</div>
+      <div class="grow">
+        <div class="eyebrow">USER SESSION</div>
+        <h1>$(username)</h1>
+        <p>اتصال فعال است — آمار مصرف به‌صورت زنده نمایش داده می‌شود.</p>
+      </div>
+      <a class="logout-btn" href="$(link-logout)">خروج</a>
+    </section>
+
+    <section class="metric-strip">
+      <article class="metric">
+        <span>دانلود کل</span>
+        <strong id="totalDownNice">$(bytes-out-nice)</strong>
+        <div class="mini-bar"><i id="barDown" style="width:54%"></i></div>
+      </article>
+      <article class="metric">
+        <span>آپلود کل</span>
+        <strong id="totalUpNice">$(bytes-in-nice)</strong>
+        <div class="mini-bar"><i id="barUp" style="width:32%"></i></div>
+      </article>
+      <article class="metric">
+        <span>زمان اتصال</span>
+        <strong>$(uptime)</strong>
+        <div class="mini-bar"><i style="width:69%"></i></div>
+      </article>
+      <article class="metric">
+        <span>باقی‌مانده</span>
+        <strong>$(session-time-left)</strong>
+        <div class="mini-bar"><i style="width:76%"></i></div>
+      </article>
+    </section>
+
+    <section class="panel">
+      <div class="section-head">
+        <div><span class="section-mark"></span> مصرف لحظه‌ای</div>
+        <b id="totalRate">0 Kbps</b>
+      </div>
+
+      <div class="speed-row">
+        <div>
+          <span class="speed-label">↓ Download</span>
+          <strong id="downRate">0 Kbps</strong>
+        </div>
+        <div>
+          <span class="speed-label">↑ Upload</span>
+          <strong id="upRate">0 Kbps</strong>
+        </div>
+      </div>
+
+      <div class="chart-shell" role="img" aria-label="نمودار زنده مصرف اینترنت">
+        <div class="dots"></div>
+        <svg id="trafficChart" viewBox="0 0 640 220" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="fillTraffic" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#43d69e" stop-opacity=".30"/>
+              <stop offset="100%" stop-color="#43d69e" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <path id="areaPath" class="area live-area" d=""></path>
+          <polyline id="linePath" class="line" points=""></polyline>
+        </svg>
+        <div class="chart-axis">
+          <span>-60s</span><span>-30s</span><span>Now</span>
+        </div>
+      </div>
+
+      <div class="hint" id="updateState">در حال دریافت اطلاعات زنده...</div>
+    </section>
+
+    <section class="panel usage-panel">
+      <div class="section-head">
+        <div><span class="section-mark"></span> حجم مصرفی</div>
+        <b id="usedTotalNice">—</b>
+      </div>
+      <div class="usage-grid">
+        <div>
+          <span>Downloaded</span>
+          <strong id="usageDown">$(bytes-out-nice)</strong>
+        </div>
+        <div>
+          <span>Uploaded</span>
+          <strong id="usageUp">$(bytes-in-nice)</strong>
+        </div>
+        <div>
+          <span>Total</span>
+          <strong id="usageTotal">—</strong>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    window.MT_INITIAL = {
+      bytesIn: Number("$(bytes-in)") || 0,
+      bytesOut: Number("$(bytes-out)") || 0
+    };
+  </script>
+  <script src="assets/status.js"></script>
+</body>
+</html>
